@@ -1,3 +1,5 @@
+using System;
+
 namespace GenericDeploymentScripter.Logic
 {
     public class Logging
@@ -29,7 +31,14 @@ namespace GenericDeploymentScripter.Logic
         /// <param name="oMessage">error message to log</param>
         public static void ErrorLogging(string strMessage, object oMessage)
         {
-            logger.Error(strMessage, oMessage);
+            try
+            {
+                logger.Error(strMessage, oMessage);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
     }
 }
