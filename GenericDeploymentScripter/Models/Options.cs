@@ -14,6 +14,11 @@ namespace GenericDeploymentScripter.Models
         public string targetConnectionString { get; set; }
 
         [Option(
+            Required = true,
+            HelpText = "Argument to hold the output path with the filename")]
+        public string outputPath { get; set; }
+
+        [Option(
             Required = false,
             HelpText = "Argument to hold the username (with domain)")]
         public string username { get; set; }

@@ -16,15 +16,12 @@ namespace GenericDeploymentScripter
         }
         static void RunOptions(Options opts)
         {
-            Comparer comparer = new Comparer()
-            {
-                options = opts
-            };
+            Comparer comparer = new Comparer(opts);
             comparer.startCompare();
         }
         static void HandleParseError(IEnumerable<Error> errs)
         {
-            Console.Error.WriteLine("Error: " + errs.ToString());
+            Logging.ErrorLogging("Error to init the parameters", errs);
         }
     }
 }

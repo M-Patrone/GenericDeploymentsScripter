@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using GenericDeploymentScripter.Models;
 using Microsoft.Data.SqlClient;
@@ -12,120 +13,79 @@ namespace GenericDeploymentScripter.Logic
 {
     public class Comparer
     {
-        public Options options { get; set; }
+        /// <summary>
+        /// constructor
+        /// </summary>
+        /// <param name="options">users parameters</param>
+        public Comparer(Options options)
+        {
+            this.options = options;
 
+        }
+        private Options options;
+        private SchemaCompareDatabaseEndpoint source;
+        private SchemaCompareDatabaseEndpoint target;
+
+        private SchemaComparison comparison;
+
+        /// <summary>
+        /// method to start the compare of the database
+        /// </summary>
         public void startCompare()
         {
             try
             {
-                SchemaCompareDatabaseEndpoint source = new SchemaCompareDatabaseEndpoint(options.sourceConnectionString);
-                SchemaCompareDatabaseEndpoint target = new SchemaCompareDatabaseEndpoint(options.targetConnectionString);
-                var comparison = new SchemaComparison(source, target);
-                //comparison.SaveToFile("testfile.txt", true);
-                comparison.Options = new Microsoft.SqlServer.Dac.DacDeployOptions() { AllowIncompatiblePlatform = true, IgnorePermissions = true };
-                List<TSqlObject> sourceModel = TSqlModel.LoadFromDatabase(options.sourceConnectionString).GetObjects(DacQueryScopes.All).ToList();
-                List<TSqlObject> targetModel = TSqlModel.LoadFromDatabase(options.targetConnectionString).GetObjects(DacQueryScopes.All).ToList();
-
-
-                var objects = getListOfObjects();
-
-
-                foreach (TSqlObject excludingObject in sourceModel)
-                {
-                    string name = String.Join(".", excludingObject.Name.Parts);
-
-                    if (!objects.Contains(name))
-                    {
-                        comparison.ExcludedSourceObjects.Add(new SchemaComparisonExcludedObjectId(excludingObject.ObjectType, new ObjectIdentifier(excludingObject.Name.Parts.ToArray())));
-                        //comparison.ExcludedTargetObjects.Add(new SchemaComparisonExcludedObjectId(excludingObject.ObjectType, new ObjectIdentifier(excludingObject.Name.Parts.ToArray())));
-
-                    }
-                }
-                /*
-                       foreach (TSqlObject excludingObject in targetModel)
-                       {
-                           string name = String.Join(".", excludingObject.Name.Parts);
-
-                           if (name == "dbo.FAuftragsTarif_20190206")
-                           {
-                               Console.WriteLine("");
-                           }
-
-                           if (!objects.Contains(name))
-                           {
-                               //comparison.ExcludedSourceObjects.Add(new SchemaComparisonExcludedObjectId(excludingObject.ObjectType, new ObjectIdentifier(excludingObject.Name.Parts.ToArray())));
-                               comparison.ExcludedTargetObjects.Add(new SchemaComparisonExcludedObjectId(excludingObject.ObjectType, new ObjectIdentifier(excludingObject.Name.Parts.ToArray())));
-
-                           }
-                       }*/
-
+                initCompare();
+                initSettings();
                 SchemaComparisonResult result = comparison.Compare();
-
-
-                //excludeObjects(result);
-
-
-                // foreach (TSqlObject excludingObject in d)
-                // {
-                //     if (excludingObject.Name.Parts.Count > 1)
-                //     {
-                //         if (excludingObject.Name.Parts[1] == "FAuftragsTarif_20190206")
-                //         {
-                //             Console.Write("test");
-                //         }
-                //     }
-                //     comparison.ExcludedSourceObjects.Add(new SchemaComparisonExcludedObjectId(excludingObject.ObjectType, new ObjectIdentifier(excludingObject.Name.Parts.ToArray())));
-                //     comparison.ExcludedTargetObjects.Add(new SchemaComparisonExcludedObjectId(excludingObject.ObjectType, new ObjectIdentifier(excludingObject.Name.Parts.ToArray())));
-                // }
                 var a = result.GetErrors();
                 var differences = result.GenerateScript(target.DatabaseName);
-                System.IO.File.WriteAllText(@"D:\Projects\WriteText.txt", differences.Script);
 
-                string script = differences.Script;
+                string preparedScript = getScript(differences.Script);
+                System.IO.File.WriteAllText(options.outputPath, preparedScript);
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e);
+                Logging.ErrorLogging("Error in the start method to compare", e);
             }
         }
 
-        private void excludeObjects(SchemaComparisonResult results)
+        /// <summary>
+        /// method to init the compare
+        /// </summary>
+        private void initCompare()
         {
-            List<string> objects = getListOfObjects();
-            int a = 0;
-            // Parallel.ForEach(results.Differences, diff =>
-            // {
-            //     Console.WriteLine(a);
-            //     TSqlObject b = (diff.SourceObject ?? diff.TargetObject);
-            //     var d = b.ObjectType;
-            //     var c = b.Name.Parts;
-
-            //     string name = string.Join(".", (diff.SourceObject ?? diff.TargetObject).Name.Parts);
-            //     if (!objects.Contains(name))
-            //     {
-            //         results.Exclude(diff);
-            //     }
-            //     a++;
-            // });
-
-            foreach (var diff in results.Differences)
+            try
             {
-                Console.WriteLine(a);
-                TSqlObject b = (diff.SourceObject ?? diff.TargetObject);
-                var d = b.ObjectType;
-                var c = b.Name.Parts;
-
-                string name = string.Join(".", (diff.SourceObject ?? diff.TargetObject).Name.Parts);
-                if (!objects.Contains(name))
-                {
-                    results.Exclude(diff);
-                }
-                a++;
+                this.source = new SchemaCompareDatabaseEndpoint(options.sourceConnectionString);
+                this.target = new SchemaCompareDatabaseEndpoint(options.targetConnectionString);
+                this.comparison = new SchemaComparison(source, target);
             }
-
-            Console.WriteLine("dd");
+            catch (Exception e)
+            {
+                Logging.ErrorLogging("Error in the method to init the comparision", e);
+            }
         }
 
+        /// <summary>
+        /// method to init the comparison settings 
+        /// </summary>
+        private void initSettings()
+        {
+            try
+            {
+                comparison.Options = new Microsoft.SqlServer.Dac.DacDeployOptions() { AllowIncompatiblePlatform = true, IgnorePermissions = true };
+            }
+            catch (Exception e)
+            {
+                Logging.ErrorLogging("Error in the method to set the settings for the comparision", e);
+            }
+
+        }
+        /// <summary>
+        /// get a list of sql objects, which should be included
+        /// </summary>
+        /// <returns>list of string with sql object names</returns>
         private List<string> getListOfObjects()
         {
             List<string> objectNames = new List<string>();
@@ -133,14 +93,9 @@ namespace GenericDeploymentScripter.Logic
             {
                 using (SqlConnection connection = new SqlConnection(options.sourceConnectionString))
                 {
-                    Console.WriteLine("\nQuery data example:");
-                    Console.WriteLine("=========================================\n");
-
                     connection.Open();
-
-                    String sql = "SELECT DISTINCT SchemaName+'.'+ObjectName AS objectName FROM dbo.DDLChanges WHERE LoginName=@id";
                     var cmd = new SqlCommand("SELECT DISTINCT SchemaName+'.'+ObjectName AS objectName FROM dbo.DDLChanges WHERE LoginName=@id");
-                    cmd.Parameters.Add("@id", SqlDbType.NVarChar).Value = options.username;
+                    cmd.Parameters.Add("@id", SqlDbType.NVarChar).Value = "KULL\\patrone";//options.username;
                     cmd.Connection = connection;
 
                     using (cmd)
@@ -158,10 +113,60 @@ namespace GenericDeploymentScripter.Logic
             }
             catch (SqlException e)
             {
-                Console.WriteLine(e.ToString());
+                Logging.ErrorLogging("SQLException: Error in the method to get the sql objects to be included the comparision", e);
+            }
+            catch (Exception e)
+            {
+                Logging.ErrorLogging("Error in the method to get the sql objects to be included the comparision", e);
             }
             return objectNames;
         }
 
+        /// <summary>
+        /// method to set the script together with the sql objects  
+        /// </summary>
+        /// <param name="strGenScript">generated script from dacfx</param>
+        /// <returns>the complete modified sql script</returns>
+        private string getScript(string strGenScript)
+        {
+            try
+            {
+                List<string> incSQLObjects = getListOfObjects();
+                string strIncSQLObjectsScript = "";
+                foreach (string incSQLObject in incSQLObjects)
+                {
+
+                    strIncSQLObjectsScript += getRequestedSqlObject(strGenScript, incSQLObject.Split(".")[0], incSQLObject.Split(".")[1]);
+                    strIncSQLObjectsScript += "\n\n";
+                }
+                return strIncSQLObjectsScript;
+            }
+            catch (Exception e)
+            {
+                Logging.ErrorLogging("Error in the method to get the sql script to be included the comparision", e);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Method to compare the generated script with the regex to get only the sql object, which is desired
+        /// </summary>
+        /// <param name="strToSearch">the generated script from dacfx</param>
+        /// <param name="strSchemaName">the sql schema of the sql object</param>
+        /// <param name="strObjectName">the name of the sql object</param>
+        /// <returns>the object scripted</returns>
+        private string getRequestedSqlObject(string strToSearch, string strSchemaName, string strObjectName)
+        {
+            try
+            {
+                Regex reg = new Regex(@"(PRINT N\'\[" + strSchemaName + @"\]\.\[" + strObjectName + @"\]) ([^,])+;((.|\n)*?(?=PRINT N\'([^,])+;))");
+                return reg.Match(strToSearch).Value;
+            }
+            catch (Exception e)
+            {
+                Logging.ErrorLogging("Error in the method to compare and get the right SQL-Object", e);
+                return null;
+            }
+        }
     }
 }
