@@ -14,7 +14,7 @@ namespace GenericDeploymentScripter.Models
         public string targetConnectionString { get; set; }
 
         [Option(
-            Required = true,
+            Required = false,
             HelpText = "Argument to hold the output path with the filename")]
         public string outputPath { get; set; }
 
