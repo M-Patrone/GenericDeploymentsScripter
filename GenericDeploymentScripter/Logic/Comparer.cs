@@ -8,18 +8,24 @@ using GenericDeploymentScripter.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.SqlServer.Dac.Compare;
 using Microsoft.SqlServer.Dac.Model;
+using Serilog;
+using Serilog.Core;
 
 namespace GenericDeploymentScripter.Logic
 {
     public class Comparer
     {
+
+        private readonly Logger _logger;
+
         /// <summary>
         /// constructor
         /// </summary>
         /// <param name="options">users parameters</param>
-        public Comparer(Options options)
+        public Comparer(Options options, Logger log)
         {
             this.options = options;
+            this._logger = log;
 
         }
         private Options options;
@@ -46,7 +52,7 @@ namespace GenericDeploymentScripter.Logic
             }
             catch (Exception e)
             {
-                Logging.ErrorLogging("Error in the start method to compare", e);
+                _logger.Error("Error in the start method to compare", e);
             }
         }
 
@@ -63,7 +69,7 @@ namespace GenericDeploymentScripter.Logic
             }
             catch (Exception e)
             {
-                Logging.ErrorLogging("Error in the method to init the comparision", e);
+                _logger.Error("Error in the method to init the comparision", e);
             }
         }
 
@@ -78,7 +84,7 @@ namespace GenericDeploymentScripter.Logic
             }
             catch (Exception e)
             {
-                Logging.ErrorLogging("Error in the method to set the settings for the comparision", e);
+                _logger.Error("Error in the method to set the settings for the comparision", e);
             }
 
         }
@@ -113,11 +119,11 @@ namespace GenericDeploymentScripter.Logic
             }
             catch (SqlException e)
             {
-                Logging.ErrorLogging("SQLException: Error in the method to get the sql objects to be included the comparision", e);
+                _logger.Error("SQLException: Error in the method to get the sql objects to be included the comparision", e);
             }
             catch (Exception e)
             {
-                Logging.ErrorLogging("Error in the method to get the sql objects to be included the comparision", e);
+                _logger.Error("Error in the method to get the sql objects to be included the comparision", e);
             }
             return objectNames;
         }
@@ -143,7 +149,7 @@ namespace GenericDeploymentScripter.Logic
             }
             catch (Exception e)
             {
-                Logging.ErrorLogging("Error in the method to get the sql script to be included the comparision", e);
+                _logger.Error("Error in the method to get the sql script to be included the comparision", e);
                 return null;
             }
         }
@@ -164,7 +170,7 @@ namespace GenericDeploymentScripter.Logic
             }
             catch (Exception e)
             {
-                Logging.ErrorLogging("Error in the method to compare and get the right SQL-Object", e);
+                _logger.Error("Error in the method to compare and get the right SQL-Object", e);
                 return null;
             }
         }

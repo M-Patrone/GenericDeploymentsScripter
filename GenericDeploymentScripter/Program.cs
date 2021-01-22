@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using CommandLine;
 using GenericDeploymentScripter.Logic;
 using GenericDeploymentScripter.Models;
+using Serilog;
+using Serilog.Core;
 
 namespace GenericDeploymentScripter
 {
@@ -16,12 +18,17 @@ namespace GenericDeploymentScripter
         }
         static void RunOptions(Options opts)
         {
-            Comparer comparer = new Comparer(opts);
+            Logger log = new LoggerConfiguration()
+     .WriteTo.Console()
+     .WriteTo.File("log.txt")
+     .CreateLogger();
+
+            Comparer comparer = new Comparer(opts, log);
             comparer.startCompare();
         }
         static void HandleParseError(IEnumerable<Error> errs)
         {
-            Logging.ErrorLogging("Error to init the parameters", errs);
+            //Logging.ErrorLogging("Error to init the parameters", errs);
         }
     }
 }
