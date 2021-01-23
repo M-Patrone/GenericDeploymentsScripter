@@ -5,6 +5,8 @@
     <TargetFramework>net5.0</TargetFramework>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>DeploymentScripter</ToolCommandName>
+    <PackageDescription>This package contains a deployment scripter via cli</PackageDescription>
+    <RepositoryUrl>https://github.com/M-Patrone/GenericDeploymentsScripter</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
