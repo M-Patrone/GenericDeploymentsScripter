@@ -101,7 +101,7 @@ namespace GenericDeploymentScripter.Logic
                 {
                     connection.Open();
                     var cmd = new SqlCommand("SELECT DISTINCT SchemaName+'.'+ObjectName AS objectName FROM dbo.DDLChanges WHERE LoginName=@id");
-                    cmd.Parameters.Add("@id", SqlDbType.NVarChar).Value = "KULL\\patrone";//options.username;
+                    cmd.Parameters.Add("@id", SqlDbType.NVarChar).Value = options.username;
                     cmd.Connection = connection;
 
                     using (cmd)
