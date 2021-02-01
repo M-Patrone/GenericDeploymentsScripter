@@ -13,13 +13,13 @@ dotnet tool install -g GenericDeploymentScripter --version 1.0.0
 The package is for the moment only on GitHub. So you have to add GitHub as a nuget source:
 
 ```
+dotnet nuget add source "https://nuget.pkg.github.com/M-Patrone/index.json" --name "GitHub" --username YOUR_USERNAME --password GITHUB_PAT
+
 dotnet tool install -g GenericDeploymentScripter --version 1.0.0
 ```
 
-dotnet nuget add source "https://nuget.pkg.github.com/M-Patrone/index.json" --name "GitHub" --username YOUR_USERNAME --password GITHUB_PAT
-
-```
 Here a list of the supported arguments:
+
 ```
 
 --sourceconnectionstring Required. Argument to hold the connection string
@@ -33,7 +33,5 @@ from the target DB
 --username Argument to hold the username (with domain)
 
 --help Display this help screen.
-
-```
 
 ```
